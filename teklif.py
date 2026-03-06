@@ -8,24 +8,22 @@ SAVE_DIR = "TEKLİFLER"
 LOGO_PATH = "logo.png"
 if not os.path.exists(SAVE_DIR): os.makedirs(SAVE_DIR)
 
-def t(metin):
-    """Bulutta PDF'in çökmemesi için Türkçe karakterleri çevirir"""
+def dosya_adi_yap(metin):
+    """Sadece dosya kaydedilirken hata çıkmaması için ismi düzenler"""
     replacements = {'ı':'i','İ':'I','ş':'s','Ş':'S','ğ':'g','Ğ':'G','ü':'u','Ü':'U','ö':'o','Ö':'O','ç':'c','Ç':'C', 'â':'a', 'Â':'A'}
     metin = str(metin)
     for k, v in replacements.items():
         metin = metin.replace(k, v)
-    return metin
-
-def dosya_adi_yap(metin):
-    return t(metin).replace(" ", "_")
+    return metin.replace(" ", "_")
 
 # --- ARAYÜZ ---
-st.set_page_config(page_title="Alpinetech", layout="wide")
-st.title(" Alpinetech Teklif Sistemi")
+st.set_page_config(page_title="Alpinetech Teklif Hazırlama", layout="wide")
+st.title("🏔️ Alpinetech Teklif Hazırlama")
 
 if 'kategoriler' not in st.session_state:
     st.session_state.kategoriler = []
     
+# VARSAYILAN GENEL ŞARTLAR
 if 'sartlar' not in st.session_state:
     st.session_state.sartlar = [
         "Ulaşım ve konaklama giderleri teklif bedeline dâhildir.",
@@ -34,6 +32,7 @@ if 'sartlar' not in st.session_state:
         "İş bu teklif ve şartlar, verildiği tarihten itibaren 15 (on beş) takvim günü boyunca geçerlidir."
     ]
 
+# --- 1. ÜST BİLGİLER VE MÜŞTERİ/VEREN BİLGİLERİ ---
 with st.expander("📄 Teklif, İletişim ve KDV Ayarları", expanded=True):
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -63,6 +62,7 @@ with st.expander("📄 Teklif, İletişim ve KDV Ayarları", expanded=True):
 
 st.divider()
 
+# --- 2. KATEGORİ, ADET VE MADDE EKLEME ---
 st.subheader("📋 İş Kalemleri")
 with st.form("kategori_ekle", clear_on_submit=True):
     col_k1, col_k2 = st.columns([3, 1])
@@ -98,6 +98,7 @@ if st.session_state.kategoriler:
                 st.rerun()
         st.write("---")
 
+# --- 3. GENEL ŞARTLAR ---
 st.subheader("⚖️ Genel Şartlar")
 with st.form("sart_ekle", clear_on_submit=True):
     c_sart1, c_sart2 = st.columns([4, 1])
@@ -115,6 +116,7 @@ if st.session_state.sartlar:
 
 st.divider()
 
+# --- 4. DOSYA KAYIT VE PDF OLUŞTURMA ---
 st.subheader("💾 Kayıt Ayarları")
 dosya_adi = st.text_input("Kaydedilecek Dosya Adı", value="Yeni_Teklif_Dosyasi")
 
@@ -127,21 +129,28 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
         pdf = FPDF()
         pdf.add_page()
         
-        # --- BULUT VE WİNDOWS UYUMLU FONT SİSTEMİ ---
+        # --- KESİN ÇÖZÜM: BULUT VE BİLGİSAYAR UYUMLU FONT SİSTEMİ ---
         font_adi = 'Arial'
-        bulutta_mi = True
-        if os.path.exists(r'C:\Windows\Fonts\arial.ttf'):
-            try:
-                pdf.add_font('ArialTR', '', r'C:\Windows\Fonts\arial.ttf', uni=True)
-                pdf.add_font('ArialTR', 'B', r'C:\Windows\Fonts\arialbd.ttf', uni=True)
-                font_adi = 'ArialTR'
-                bulutta_mi = False
-            except:
-                pass
-                
+        # Önce aynı klasörde font var mı diye bakar (Bulut ve USB taşıma için)
+        if os.path.exists('arial.ttf') and os.path.exists('arialbd.ttf'):
+            pdf.add_font('ArialTR', '', 'arial.ttf', uni=True)
+            pdf.add_font('ArialTR', 'B', 'arialbd.ttf', uni=True)
+            font_adi = 'ArialTR'
+        # Eğer yoksa Windows içinden çekmeye çalışır (Eski sistem bilgisayar için)
+        elif os.path.exists(r'C:\Windows\Fonts\arial.ttf'):
+            pdf.add_font('ArialTR', '', r'C:\Windows\Fonts\arial.ttf', uni=True)
+            pdf.add_font('ArialTR', 'B', r'C:\Windows\Fonts\arialbd.ttf', uni=True)
+            font_adi = 'ArialTR'
+            
         def p(metin):
-            """Font bulunamazsa (Buluttaysa) çökmeyi önlemek için karakterleri çevirir"""
-            return t(metin) if bulutta_mi else str(metin)
+            """Eğer font dosyası kayıpsa uygulamanın çökmesini %100 engeller"""
+            if font_adi == 'ArialTR':
+                return str(metin)
+            # Acil Durum Temizliği (Bulutta font yoksa devreye girer)
+            rep = {'ı':'i','İ':'I','ş':'s','Ş':'S','ğ':'g','Ğ':'G','ü':'u','Ü':'U','ö':'o','Ö':'O','ç':'c','Ç':'C', 'â':'a', 'Â':'A', '•':'-', '€':'EUR', '₺':'TL'}
+            m = str(metin)
+            for k, v in rep.items(): m = m.replace(k, v)
+            return m.encode('latin-1', 'ignore').decode('latin-1')
         
         BLUE = (46, 116, 181)
         GREEN = (112, 173, 71)
@@ -249,30 +258,30 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
             pdf.cell(40, 5, "", ln=0) 
             pdf.cell(50, 5, p(k['baslik']), ln=0, align='R') 
             pdf.cell(20, 5, str(k['adet']), ln=0, align='C')
-            pdf.cell(35, 5, f"{f_str} {para_birimi}", ln=0, align='C')
-            pdf.cell(45, 5, f"{t_str} {para_birimi}", ln=1, align='C')
+            pdf.cell(35, 5, p(f"{f_str} {para_birimi}"), ln=0, align='C')
+            pdf.cell(45, 5, p(f"{t_str} {para_birimi}"), ln=1, align='C')
 
         pdf.ln(2)
         if kdv_ekle:
             a_str = f"{ara_toplam:,.0f}".replace(",", ".")
             pdf.cell(110, 5, "", ln=0) 
             pdf.cell(35, 5, "Toplam", ln=0, align='R')
-            pdf.cell(45, 5, f"{a_str} {para_birimi}", ln=1, align='C')
+            pdf.cell(45, 5, p(f"{a_str} {para_birimi}"), ln=1, align='C')
             
             k_str = f"{kdv_tutari:,.0f}".replace(",", ".")
             pdf.cell(110, 5, "", ln=0)
             pdf.cell(35, 5, p(f"KDV(%{kdv_oran})"), ln=0, align='R')
-            pdf.cell(45, 5, f"{k_str} {para_birimi}", ln=1, align='C')
+            pdf.cell(45, 5, p(f"{k_str} {para_birimi}"), ln=1, align='C')
             
             g_str = f"{genel_toplam:,.0f}".replace(",", ".")
             pdf.cell(110, 5, "", ln=0)
             pdf.cell(35, 5, "Genel Toplam", ln=0, align='R')
-            pdf.cell(45, 5, f"{g_str} {para_birimi}", ln=1, align='C')
+            pdf.cell(45, 5, p(f"{g_str} {para_birimi}"), ln=1, align='C')
         else:
             g_str = f"{genel_toplam:,.0f}".replace(",", ".")
             pdf.cell(110, 5, "", ln=0)
             pdf.cell(35, 5, "Genel Toplam", ln=0, align='R')
-            pdf.cell(45, 5, f"{g_str} {para_birimi}", ln=1, align='C')
+            pdf.cell(45, 5, p(f"{g_str} {para_birimi}"), ln=1, align='C')
 
         if st.session_state.sartlar:
             pdf.ln(10)
@@ -302,7 +311,6 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
         out_name = os.path.join(SAVE_DIR, safe_name)
         pdf.output(out_name)
         
-        st.success(f"✅ Teklif '{safe_name}' başarıyla oluşturuldu!")
+        st.success(f"✅ Teklif '{safe_name}' adıyla klasöre başarıyla kaydedildi!")
         with open(out_name, "rb") as f:
             st.download_button("📩 PDF'i İndir", f, file_name=safe_name)
-
