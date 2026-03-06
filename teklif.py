@@ -20,8 +20,8 @@ def dosya_adi_yap(metin):
     return t(metin).replace(" ", "_")
 
 # --- ARAYÜZ ---
-st.set_page_config(page_title="Alpinetech PRO Format", layout="wide")
-st.title("🏔️ Alpinetech Orijinal Teklif Sistemi")
+st.set_page_config(page_title="Alpinetech", layout="wide")
+st.title(" Alpinetech Teklif Sistemi")
 
 if 'kategoriler' not in st.session_state:
     st.session_state.kategoriler = []
@@ -305,3 +305,4 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
         st.success(f"✅ Teklif '{safe_name}' başarıyla oluşturuldu!")
         with open(out_name, "rb") as f:
             st.download_button("📩 PDF'i İndir", f, file_name=safe_name)
+
