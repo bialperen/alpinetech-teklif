@@ -6,6 +6,7 @@ import os
 # --- AYARLAR ---
 SAVE_DIR = "TEKLİFLER"
 LOGO_PATH = "logo.png"
+
 if not os.path.exists(SAVE_DIR): os.makedirs(SAVE_DIR)
 
 def dosya_adi_yap(metin):
@@ -17,13 +18,13 @@ def dosya_adi_yap(metin):
     return metin.replace(" ", "_")
 
 # --- ARAYÜZ ---
-st.set_page_config(page_title="Alpinetech Teklif Hazırlama", layout="wide")
-st.title("🏔️ Alpinetech Teklif Hazırlama")
+st.set_page_config(page_title="Alpinetech PRO Format", layout="wide")
+st.title("🏔️ Alpinetech Orijinal Teklif Sistemi")
 
+# --- HAFIZA VE SABİT VERİTABANI ---
 if 'kategoriler' not in st.session_state:
     st.session_state.kategoriler = []
     
-# VARSAYILAN GENEL ŞARTLAR
 if 'sartlar' not in st.session_state:
     st.session_state.sartlar = [
         "Ulaşım ve konaklama giderleri teklif bedeline dâhildir.",
@@ -31,6 +32,14 @@ if 'sartlar' not in st.session_state:
         "Ödeme Koşulları peşin.",
         "İş bu teklif ve şartlar, verildiği tarihten itibaren 15 (on beş) takvim günü boyunca geçerlidir."
     ]
+
+# GÖMÜLÜ MÜŞTERİ VERİTABANI (Sunucu resetlense de ASLA SİLİNMEZ)
+if 'musteriler' not in st.session_state:
+    st.session_state.musteriler = {
+        "Murat Bey'in Dikkatine": {"tel": "+90 533 741 38 60", "mail": "alp.orme1@gmail.com"},
+        "Örnek Firma A.Ş.": {"tel": "+90 555 111 22 33", "mail": "info@ornek.com"}
+        # Kalıcı olmasını istediğin yeni müşterileri GitHub'dan buraya alt alta ekleyebilirsin
+    }
 
 # --- 1. ÜST BİLGİLER VE MÜŞTERİ/VEREN BİLGİLERİ ---
 with st.expander("📄 Teklif, İletişim ve KDV Ayarları", expanded=True):
@@ -51,9 +60,34 @@ with st.expander("📄 Teklif, İletişim ve KDV Ayarları", expanded=True):
 
     with c2:
         st.markdown("**🏢 Müşteri Bilgileri**")
-        m_ad = st.text_input("Müşteri Firma/Kişi", "")
-        m_tel = st.text_input("Müşteri Tel", "")
-        m_mail = st.text_input("Müşteri E-Posta", "")
+        
+        # Müşteri Seçimi Açılır Menüsü
+        secenekler = ["-- Yeni Müşteri Gir --"] + list(st.session_state.musteriler.keys())
+        secilen_musteri = st.selectbox("📇 Kayıtlı Müşteri Seç", secenekler)
+        
+        # Seçime Göre Kutuları Otomatik Doldurma
+        if secilen_musteri != "-- Yeni Müşteri Gir --":
+            def_ad = secilen_musteri
+            def_tel = st.session_state.musteriler[secilen_musteri].get("tel", "")
+            def_mail = st.session_state.musteriler[secilen_musteri].get("mail", "")
+        else:
+            def_ad = ""
+            def_tel = ""
+            def_mail = ""
+            
+        m_ad = st.text_input("Müşteri Firma/Kişi", value=def_ad)
+        m_tel = st.text_input("Müşteri Tel", value=def_tel)
+        m_mail = st.text_input("Müşteri E-Posta", value=def_mail)
+        
+        # Geçici Hafızaya Kaydet Butonu (Aktif oturum için)
+        if st.button("💾 Müşteriyi Hafızaya Al", use_container_width=True):
+            if m_ad:
+                st.session_state.musteriler[m_ad] = {"tel": m_tel, "mail": m_mail}
+                st.success(f"{m_ad} oturum hafızasına eklendi!")
+                st.rerun()
+            else:
+                st.error("Lütfen önce bir müşteri adı yazın!")
+
     with c3:
         st.markdown("**🧑‍💻 Teklifi Veren Bilgileri**")
         v_ad = st.text_input("İsim Soyisim", "Kürşad Nuri Örme")
@@ -129,14 +163,11 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
         pdf = FPDF()
         pdf.add_page()
         
-        # --- KESİN ÇÖZÜM: BULUT VE BİLGİSAYAR UYUMLU FONT SİSTEMİ ---
         font_adi = 'Arial'
-        # Önce aynı klasörde font var mı diye bakar (Bulut ve USB taşıma için)
         if os.path.exists('arial.ttf') and os.path.exists('arialbd.ttf'):
             pdf.add_font('ArialTR', '', 'arial.ttf', uni=True)
             pdf.add_font('ArialTR', 'B', 'arialbd.ttf', uni=True)
             font_adi = 'ArialTR'
-        # Eğer yoksa Windows içinden çekmeye çalışır (Eski sistem bilgisayar için)
         elif os.path.exists(r'C:\Windows\Fonts\arial.ttf'):
             pdf.add_font('ArialTR', '', r'C:\Windows\Fonts\arial.ttf', uni=True)
             pdf.add_font('ArialTR', 'B', r'C:\Windows\Fonts\arialbd.ttf', uni=True)
@@ -146,7 +177,6 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
             """Eğer font dosyası kayıpsa uygulamanın çökmesini %100 engeller"""
             if font_adi == 'ArialTR':
                 return str(metin)
-            # Acil Durum Temizliği (Bulutta font yoksa devreye girer)
             rep = {'ı':'i','İ':'I','ş':'s','Ş':'S','ğ':'g','Ğ':'G','ü':'u','Ü':'U','ö':'o','Ö':'O','ç':'c','Ç':'C', 'â':'a', 'Â':'A', '•':'-', '€':'EUR', '₺':'TL'}
             m = str(metin)
             for k, v in rep.items(): m = m.replace(k, v)
