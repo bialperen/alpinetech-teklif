@@ -18,8 +18,8 @@ def dosya_adi_yap(metin):
     return metin.replace(" ", "_")
 
 # --- ARAYÜZ ---
-st.set_page_config(page_title="Alpinetech PRO Format", layout="wide")
-st.title("🏔️ Alpinetech Orijinal Teklif Sistemi")
+st.set_page_config(page_title="Alpinetech Teklif Hazırlama", layout="wide")
+st.title("🏔️ Alpinetech")
 
 # --- HAFIZA VE SABİT VERİTABANI ---
 if 'kategoriler' not in st.session_state:
@@ -344,3 +344,4 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
         st.success(f"✅ Teklif '{safe_name}' adıyla klasöre başarıyla kaydedildi!")
         with open(out_name, "rb") as f:
             st.download_button("📩 PDF'i İndir", f, file_name=safe_name)
+
