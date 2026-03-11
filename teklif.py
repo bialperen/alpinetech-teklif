@@ -39,7 +39,6 @@ if 'sartlar' not in st.session_state:
         "İş bu teklif ve şartlar, verildiği tarihten itibaren 15 (on beş) takvim günü boyunca geçerlidir.",
         "Montaj için gerekli saha düzenlemeleri ve makine temin ve çalışmaları müşteriye aittir.",
         "Gerekli izinlerin alınması müşteriye aittir.",
-        "Bantın çalışması için gerekli enerji hattı müşteri tarafından sağlanacaktır."
     ]
 
 if 'musteriler' not in st.session_state:
@@ -369,3 +368,4 @@ if st.button("🚀 TEKLİFİ OLUŞTUR VE İNDİR", type="primary"):
             safe_name = dosya_adi_yap(dosya_adi) + ".docx"
             st.success(f"✅ Word dosyası '{safe_name}' olarak hazırlandı!")
             st.download_button("📩 Word Dosyasını İndir", buffer, file_name=safe_name)
+
